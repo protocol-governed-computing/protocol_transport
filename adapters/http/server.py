@@ -76,6 +76,14 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(403, "text/plain", b"forbidden")
             return
         if target.is_dir():
+            if not path.endswith("/"):
+                # Redirect to add the trailing slash so the page's RELATIVE asset paths
+                # resolve under its own mount (e.g. /collatz -> /collatz/), keeping domain
+                # screens decoupled from their mount prefix. Standard web-server behavior.
+                self.send_response(301)
+                self.send_header("Location", path + "/")
+                self.end_headers()
+                return
             target = target / "index.html"
         if not target.is_file():
             self._send(404, "text/plain", b"not found")
