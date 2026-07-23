@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "transport"
-version = "0.5.0"
-description = "Protocol-Governed Computing — transport realization boundary; ingress and egress adapters for HTTP and CLI surfaces"
+version = "1.0.0"
+description = "Protocol-Governed Computing — domain-neutral transport boundary engine (canonical contracts, generic resolver, protocol adapters)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
