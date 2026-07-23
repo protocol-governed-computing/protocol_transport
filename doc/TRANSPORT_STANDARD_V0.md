@@ -122,7 +122,7 @@ Three independent dimensions:
 External Protocol Binding → Operation Identity → TI → WF
 ```
 
-not `route → WF` and not `route → TI → WF`. The public identity `collatz.compute` is stable; the implementation `WF_DEMO_COLLATZ_CONJECTURE_V0` is not. Re-pointing `collatz.compute` from `TI_COLLATZ_COMPUTE_V0` (→ `WF_..._V0`) to `TI_COLLATZ_COMPUTE_V1` (→ `WF_COLLATZ_COMPUTE_V1`) MUST NOT require any adapter change.
+not `route → WF` and not `route → TI → WF`. The public identity `collatz.compute` is stable; the implementation `WF_COLLATZ_CONJECTURE_V0` is not. Re-pointing `collatz.compute` from `TI_COLLATZ_COMPUTE_V0` (→ `WF_..._V0`) to `TI_COLLATZ_COMPUTE_V1` (→ `WF_COLLATZ_COMPUTE_V1`) MUST NOT require any adapter change.
 
 **Patch 2 — External Protocol Binding is a formal concept, not yet an artifact.** In V0 it is adapter-owned configuration. The distinction is governance domain:
 - *PGC governance* — what an operation means, whether it is permitted, which WF serves it, what inputs are valid, what result classes exist.
@@ -276,9 +276,9 @@ CLI    collatz compute 15                        verb + positional  → collatz.
 }
 ```
 
-**Ingress —** `TI_COLLATZ_COMPUTE_V0`: declares input contract (`number:int`, required); context requirements none (V0); binds `collatz.compute → WF_DEMO_COLLATZ_CONJECTURE_V0`. Resolved and validated at compile time.
+**Ingress —** `TI_COLLATZ_COMPUTE_V0`: declares input contract (`number:int`, required); context requirements none (V0); binds `collatz.compute → WF_COLLATZ_CONJECTURE_V0`. Resolved and validated at compile time.
 
-**Execution —** `WF_DEMO_COLLATZ_CONJECTURE_V0` → PGC Result `{ steps: 17 }` + evidence.
+**Execution —** `WF_COLLATZ_CONJECTURE_V0` → PGC Result `{ steps: 17 }` + evidence.
 
 **Egress —** `TE_COLLATZ_COMPUTE_V0`: classifies `SUCCESS`; exposes `{number, steps}`; evidence policy = reference-only.
 
