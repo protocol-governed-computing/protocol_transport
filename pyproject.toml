@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transport"
+version = "0.5.0"
+description = "Protocol-Governed Computing — transport realization boundary; ingress and egress adapters for HTTP and CLI surfaces"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+
+authors = [
+  { name = "Bhash Ganti aka Bachi" }
+]
+
+keywords = [
+  "protocol-governed-systems",
+  "pgs",
+  "transport",
+  "ingress",
+  "egress",
+  "http",
+  "gateway"
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development",
+  "Topic :: Internet :: WWW/HTTP"
+]
+
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/bachipeachy/transport"
+Repository = "https://github.com/bachipeachy/transport"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ingress*", "egress*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.yaml", "*.json"]
