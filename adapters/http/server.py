@@ -35,6 +35,23 @@ _HTTP_STATUS = {
     "EXECUTION_FAILURE": 500,
 }
 
+# Serve JSONL traces as text so they open in-browser rather than downloading.
+mimetypes.add_type("text/plain", ".jsonl")
+
+# Friendly, fail-soft 404 for GET static requests. Live-mounted artifacts (per-run traces,
+# compiled snapshot) are transient by design: a missing one yields this page, never a crash.
+_NOT_FOUND_HTML = (
+    "<!doctype html><meta charset=utf-8><title>Not found</title>"
+    "<body style=\"font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:80px auto;color:#334155\">"
+    "<h1 style=\"color:#0b1e3c\">404 &mdash; Not found</h1>"
+    "<p>The requested resource is unavailable. If this was a <strong>trace</strong> or a "
+    "<strong>compiled artifact</strong> (e.g. a workflow projection), it may have been removed or "
+    "regenerated &mdash; the <code>data/</code> instance or the snapshot may have been cleaned or rebuilt.</p>"
+    "<p>Re-run the workload to recreate a trace, or rebuild the snapshot to regenerate compiled "
+    "artifacts, then try again.</p>"
+    "<p><a href=\"/\" style=\"color:#0b1e3c\">&larr; Back to the platform surface</a></p></body>"
+).encode("utf-8")
+
 
 def _parse_mounts(spec: str) -> list[tuple[str, Path]]:
     """Parse PGC_STATIC_MOUNTS ("prefix=dir;prefix=dir") → sorted (prefix, dir), longest first."""
@@ -68,7 +85,7 @@ class _Handler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         resolved = self._match_mount(path)
         if resolved is None:
-            self._send(404, "text/plain", b"not found")
+            self._send(404, "text/html", _NOT_FOUND_HTML)
             return
         directory, rest = resolved
         target = (directory / rest).resolve()
@@ -78,7 +95,7 @@ class _Handler(BaseHTTPRequestHandler):
         if target.is_dir():
             if not path.endswith("/"):
                 # Redirect to add the trailing slash so the page's RELATIVE asset paths
-                # resolve under its own mount (e.g. /collatz -> /collatz/), keeping domain
+                # resolve under its own mount (e.g. /foo -> /foo/), keeping domain
                 # screens decoupled from their mount prefix. Standard web-server behavior.
                 self.send_response(301)
                 self.send_header("Location", path + "/")
@@ -86,7 +103,7 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             target = target / "index.html"
         if not target.is_file():
-            self._send(404, "text/plain", b"not found")
+            self._send(404, "text/html", _NOT_FOUND_HTML)
             return
         mime, _ = mimetypes.guess_type(str(target))
         self._send(200, mime or "application/octet-stream", target.read_bytes())

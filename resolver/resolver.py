@@ -139,6 +139,15 @@ def resolve(request: dict[str, Any], registry: dict[str, OperationContract], *,
 
     evidence: list[str] = []
     if te.get("evidence_policy") == "reference_only":
-        evidence = [f"trace:{run.trace_id}"]
+        # Resolvable, protocol-neutral reference: the trace path relative to the instance data
+        # root, derived from the runtime's OWN trace_dir (no trace layout hard-coded here). An
+        # adapter that mounts the data root can turn this into a link; others treat it as an
+        # opaque reference. Falls back to the bare trace id if the path can't be relativized.
+        if run.trace_dir.is_relative_to(data_root):
+            rel = run.trace_dir.relative_to(data_root)      # e.g. traces/<domain>/<wf>/<id>
+            ref = f"{rel.as_posix()}/{run.trace_id}.jsonl"
+        else:
+            ref = run.trace_id
+        evidence = [f"trace:{ref}"]
 
     return _response(request_id, _SUCCESS, result=result, evidence=evidence)
