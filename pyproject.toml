@@ -41,14 +41,14 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/bachipeachy/transport"
-Repository = "https://github.com/bachipeachy/transport"
+Repository = "https://github.com/protocol-governed-computing/transport"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["ingress*", "egress*"]
+include = ["adapters*", "resolver*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.yaml", "*.json"]
