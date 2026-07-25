@@ -1,23 +1,20 @@
-"""Registry — loads hand-authored TI/TE boundary declarations, keyed by Operation Identity.
+"""Registry — loads compiled TI/TE boundary declarations from the sealed snapshot,
+keyed by Operation Identity.
 
-CUT-#1 DEVIATION (deliberate, scoped): the boundary declarations are read from
-hand-authored `.md` artifacts at process start, not from a compiled snapshot. Phase 3
-promotes these to compiler-recognized `TI_`/`TE_` kinds in the sealed snapshot. Until
-then this is the single, declared place that materializes them.
+Phase 3: the boundary declarations are read from the **compiled snapshot** (canonical
+`artifact_type: TI`/`TE` artifacts), not from hand-authored `.md`. The compiler recognizes
+the `TI_`/`TE_` kinds and seals them; this module materializes them from that snapshot.
 
-DOMAIN NEUTRALITY: this module knows nothing about any workload. It is *pointed at*
-roots (it does not discover domains by convention) and loads whatever TI/TE declarations
-live there. No operation name, workload path, or field name is hard-coded here.
+DOMAIN NEUTRALITY: this module knows nothing about any workload. It is *pointed at* a
+snapshot root; it loads whatever TI/TE artifacts the snapshot contains and pairs them by
+the `operation` each declares. No operation name, workload path, or field name is
+hard-coded here.
 """
 from __future__ import annotations
 
-import re
+import json
 from pathlib import Path
 from typing import Any
-
-import yaml
-
-_YAML_BLOCK = re.compile(r"```yaml\s*\n(.*?)\n```", re.DOTALL)
 
 
 class OperationContract:
@@ -31,44 +28,46 @@ class OperationContract:
         self.te = te
 
 
-def _machine_block(md_path: Path) -> dict[str, Any]:
-    text = md_path.read_text(encoding="utf-8")
-    match = _YAML_BLOCK.search(text)
-    if match is None:
-        raise ValueError(f"no ```yaml machine block in {md_path}")
-    data = yaml.safe_load(match.group(1))
-    if not isinstance(data, dict):
-        raise ValueError(f"machine block in {md_path} is not a mapping")
-    return data
+def load_registry(snapshot_root: Path) -> dict[str, OperationContract]:
+    """Load every compiled TI/TE pair from the sealed snapshot, keyed by Operation Identity.
 
+    Reads the compiled canonical artifacts (`artifact_type` TI/TE), takes each artifact's
+    `frontmatter` (the declared boundary contract), and pairs TI with TE by the `operation`
+    each declares.
 
-def load_registry(roots: list[Path]) -> dict[str, OperationContract]:
-    """Load every TI/TE pair found under the given roots, keyed by Operation Identity.
-
-    Structure convention (declarations, not semantics): each `TI_*.md` has a sibling
-    `TE_*.md` in the same directory declaring the same `operation`.
-
-    Fails hard on: missing sibling TE, TI/TE operation mismatch, duplicate operation.
+    Fails hard on: a transport artifact with no `operation`, a duplicate operation for the
+    same side, or a TI/TE without a matching counterpart in the snapshot.
     """
+    canonical = snapshot_root / "canonical"
+    if not canonical.is_dir():
+        raise ValueError(f"snapshot canonical dir not found: {canonical}")
+
+    ti_by_op: dict[str, dict[str, Any]] = {}
+    te_by_op: dict[str, dict[str, Any]] = {}
+    for jf in sorted(canonical.rglob("*.json")):
+        try:
+            data = json.loads(jf.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        side = data.get("artifact_type")
+        if side not in ("TI", "TE"):
+            continue
+        fm = data.get("frontmatter", {}) or {}
+        operation = fm.get("operation")
+        if not operation:
+            raise ValueError(f"transport artifact has no operation identity: {jf}")
+        target = ti_by_op if side == "TI" else te_by_op
+        if operation in target:
+            raise ValueError(f"duplicate {side} operation identity: {operation!r}")
+        target[operation] = fm
+
     registry: dict[str, OperationContract] = {}
-    for root in roots:
-        for ti_path in sorted(root.rglob("TI_*.md")):
-            te_candidates = sorted(ti_path.parent.glob("TE_*.md"))
-            if len(te_candidates) != 1:
-                raise ValueError(
-                    f"{ti_path.parent} must contain exactly one TE_*.md beside {ti_path.name}"
-                )
-            ti = _machine_block(ti_path)
-            te = _machine_block(te_candidates[0])
-            operation = ti.get("operation")
-            if not operation:
-                raise ValueError(f"TI has no operation identity: {ti_path}")
-            if te.get("operation") != operation:
-                raise ValueError(
-                    f"TE operation {te.get('operation')!r} != TI operation {operation!r} "
-                    f"in {ti_path.parent}"
-                )
-            if operation in registry:
-                raise ValueError(f"duplicate operation identity: {operation!r}")
-            registry[operation] = OperationContract(operation, ti, te)
+    for operation, ti in ti_by_op.items():
+        te = te_by_op.get(operation)
+        if te is None:
+            raise ValueError(f"TI operation {operation!r} has no matching TE in the snapshot")
+        registry[operation] = OperationContract(operation, ti, te)
+    for operation in te_by_op:
+        if operation not in ti_by_op:
+            raise ValueError(f"TE operation {operation!r} has no matching TI in the snapshot")
     return registry

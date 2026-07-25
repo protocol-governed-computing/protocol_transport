@@ -69,9 +69,10 @@ def _parse_mounts(spec: str) -> list[tuple[str, Path]]:
 # ── configuration (env-provisioned; the adapter is POINTED at everything) ──
 _MOUNTS = _parse_mounts(os.environ["PGC_STATIC_MOUNTS"])
 _BINDINGS = load_bindings(Path(os.environ["PGC_HTTP_BINDINGS"]))
-_REGISTRY = load_registry([Path(r) for r in os.environ["PGC_OPERATIONS_ROOTS"].split(":") if r])
 _DATA_ROOT = os.environ["PGC_DATA_ROOT"]
 _SNAPSHOT_ROOT = os.environ.get("PGC_SNAPSHOT_ROOT")  # None -> runtime default
+# TI/TE boundary contracts are read from the sealed snapshot (compiled TI_/TE_ kinds).
+_REGISTRY = load_registry(Path(os.environ["PGC_SNAPSHOT_ROOT"]))
 
 
 class _Handler(BaseHTTPRequestHandler):

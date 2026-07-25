@@ -6,7 +6,6 @@
 #
 # Required env:
 #   PGC_RUNTIME_ROOT     protocol_runtime repo root (provides the `runtime` package)
-#   PGC_OPERATIONS_ROOTS colon-separated dirs holding TI_/TE_ boundary declarations
 #   PGC_STATIC_MOUNTS    "prefix=dir;prefix=dir" static mount table
 #   PGC_HTTP_BINDINGS    path to the HTTP external-protocol-binding JSON
 #   PGC_SNAPSHOT_ROOT    assembled snapshot dir (read-only input)
@@ -21,7 +20,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # transport/ = sour
 PYTHON="${PYTHON:-python3}"
 
 : "${PGC_RUNTIME_ROOT:?set PGC_RUNTIME_ROOT (protocol_runtime repo root)}"
-: "${PGC_OPERATIONS_ROOTS:?set PGC_OPERATIONS_ROOTS (dirs with TI_/TE_ declarations)}"
 : "${PGC_STATIC_MOUNTS:?set PGC_STATIC_MOUNTS (prefix=dir;prefix=dir)}"
 : "${PGC_HTTP_BINDINGS:?set PGC_HTTP_BINDINGS (path to binding JSON)}"
 : "${PGC_SNAPSHOT_ROOT:?set PGC_SNAPSHOT_ROOT (assembled snapshot dir)}"
