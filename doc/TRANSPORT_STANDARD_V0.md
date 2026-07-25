@@ -70,13 +70,17 @@ Three independent dimensions:
                            │
         ┌──────────────────┼───────────────────────────────┐
         │  PGC DOMAIN       ▼                               │
+        │           Operation Identity Resolution           │
+        │                   ▼                               │
         │          ┌─────────────────┐                      │
-        │          │ TI              │  Ingress Contract     │
+        │          │ TI              │  Admission Contract   │
         │          └────────┬────────┘                      │
+        │                   ▼                               │
+        │          Compiled Invocation Contract             │
         │                   ▼                               │
         │             PGC Invocation                        │
         │                   ▼                               │
-        │                  WF                               │
+        │        governed target (WF in the RI)             │
         │                   ▼                               │
         │          IN → OP → CC → CT/CS                      │
         │                   ▼                               │
@@ -106,23 +110,25 @@ Three independent dimensions:
 | **External Protocol** | 1 | No | Wire mechanics: HTTP, JSON-RPC, CLI, WebSocket, MQ. How bytes/messages are exchanged. |
 | **Protocol Adapter** | 2 | No (thin, non-authorial) | Translates External Protocol ↔ Canonical Transport Request/Response. Owns no domain meaning. |
 | **External Protocol Binding** | 2 | Formal concept; **adapter-owned config in V0** | Declared map from a protocol selector (HTTP route+method / RPC method spelling / CLI verb) to an **Operation Identity**. Protocol-specific. `XB_` artifactization deferred (Patch 2). |
-| **Operation Identity** | 3 | **Yes** | Stable, protocol-neutral public name of a governed interaction (e.g. `collatz.compute`). MUST NOT equal a Workflow Identity (Patch 1). |
+| **Operation Identity** | 3 | **Yes** | The stable, protocol-neutral **identity** of a governed interaction (e.g. `collatz.compute`) — an addressable identity within the PGC governance universe, independent of any workflow, implementation, external protocol, or transport representation. MUST be uniquely resolvable within the applicable governance universe; MUST NOT equal a Workflow Identity. |
 | **Canonical Transport Request** | 3 | **Yes** (`TRANSPORT_REQUEST_V0`) | Protocol-neutral request contract. The single ingress interop object. |
-| **TI — Transport Ingress Contract** | 3 | **Yes** | Declares admission semantics for an Operation Identity: input contract reference, context requirements, operation→WF binding. Declared here, **resolved by the compiler** (Patch 3). |
-| **PGC Invocation** | 3→4 | runtime construct (not an artifact) | The governed act of executing the TI-bound WF under TI's compiled constraints, yielding a PGC Result. |
-| **PGC Result** | 4 | **Yes** (result envelope) | Outcome of a PGC Invocation: `outcome`, `class`, `payload`, `evidence`, `errors`. |
-| **TE — Transport Egress Contract** | 3 | **Yes** | Classifies a PGC Result into a **Result Class** and declares the output/evidence exposure contract. Protocol-neutral (Patch 4). |
+| **TI — Transport Ingress Contract** | 3 | **Yes** | Declares admission semantics for an Operation Identity: input contract reference, context requirements, and an **invocation binding** (operation identity → governed executable target). Declared here, **resolved by the compiler**. |
+| **PGC Invocation** | 3→4 | runtime construct (not an artifact) | The governed act of executing the TI-bound target under TI's compiled constraints, yielding a PGC Result. |
+| **PGC Result** | 4 | Runtime construct; **not inherently a transport artifact** | Outcome of a PGC Invocation (`outcome`, `class`, `payload`, `evidence`, `errors`). It exists whether or not a transport boundary exists; the boundary **projects** it into a Canonical Transport Response via `TE`. |
+| **TE — Transport Egress Contract** | 3 | **Yes** | **Declares** the governed classification of PGC outcomes into a protocol-neutral **Result Class**, and the output/evidence exposure contract. A declaration compiled and applied at runtime — not a runtime decision engine. |
 | **Canonical Transport Response** | 3 | **Yes** (`TRANSPORT_RESPONSE_V0`) | Protocol-neutral response contract. The single egress interop object. |
-| **Result Class** | 3 | **Yes** (via TE) | `SUCCESS \| VIOLATION \| UNAUTHORIZED \| EXECUTION_FAILURE \| NOT_FOUND`. Carries **no** protocol semantics. |
+| **Result Class** | 3 | **Yes** (via TE) | `SUCCESS \| VIOLATION \| UNAUTHORIZED \| EXECUTION_FAILURE \| OPERATION_NOT_FOUND`. Carries **no** protocol semantics. `OPERATION_NOT_FOUND` means the requested Operation Identity is absent from the governance universe — a domain resource-not-found is a *domain* result, not a transport one. |
 | **Response Projection** | 2 | No | Adapter map from `Result Class` + Canonical Response → protocol representation (HTTP status, RPC error, CLI exit). |
 
-**Patch 1 — Operation Identity is first-class and the indirection is non-negotiable.** The resolution chain is:
+**Patch 1 — Operation Identity is first-class, and the boundary is three distinct relationships, not one flat resolution:**
 
 ```
-External Protocol Binding → Operation Identity → TI → WF
+Identification:  External Protocol Binding → Operation Identity          (what governed operation is referred to?)
+Admission:       Operation Identity        → TI                          (under what governed contract may it enter?)
+Execution:       TI → PGC Invocation Contract → governed executable target (what governed execution is invoked?)
 ```
 
-not `route → WF` and not `route → TI → WF`. The public identity `collatz.compute` is stable; the implementation `WF_COLLATZ_CONJECTURE_V0` is not. Re-pointing `collatz.compute` from `TI_COLLATZ_COMPUTE_V0` (→ `WF_..._V0`) to `TI_COLLATZ_COMPUTE_V1` (→ `WF_COLLATZ_COMPUTE_V1`) MUST NOT require any adapter change.
+not `route → WF` and not `route → TI → WF`. `TI → WF` is an **implementation realization** of the invocation binding, not the transport ontology: the boundary is indifferent to whether the target is a `WF`, a capability, or a future execution construct. The public identity `collatz.compute` is stable; the implementation `WF_COLLATZ_CONJECTURE_V0` is not. Re-pointing `collatz.compute` from `TI_COLLATZ_COMPUTE_V0` to `TI_COLLATZ_COMPUTE_V1` MUST NOT require any adapter change.
 
 **Patch 2 — External Protocol Binding is a formal concept, not yet an artifact.** In V0 it is adapter-owned configuration. The distinction is governance domain:
 - *PGC governance* — what an operation means, whether it is permitted, which WF serves it, what inputs are valid, what result classes exist.
@@ -139,17 +145,21 @@ All keywords per RFC 2119.
 - **`TRANSPORT_PROTOCOL_INDEPENDENCE`** — A PGC transport contract (`TI`, `TE`, canonical request/response) MUST NOT depend on HTTP, RPC, CLI, or any other external protocol.
 - **`OPERATION_IDENTITY_INDEPENDENCE`** — An Operation Identity MUST NOT be identical to a Workflow Identity. (Patch 1)
 - **`ADAPTER_NON_AUTHORIAL`** — A Protocol Adapter MUST NOT determine business/domain semantics. It translates protocol mechanics only.
-- **`COMPILED_INVOCATION_RESOLUTION`** — Operation-to-workflow resolution, input-contract existence/compatibility, and closure validity MUST be determined before runtime execution. The runtime MUST NOT interpret arbitrary schema semantics at request time. (Patch 3)
+- **`COMPILED_INVOCATION_RESOLUTION`** — Operation-to-target resolution (the governed executable target), input-contract existence/compatibility, and closure validity MUST be determined before runtime execution. The runtime MUST NOT interpret arbitrary schema semantics at request time.
 - **`RESULT_CLASS_PROTOCOL_INDEPENDENCE`** — A PGC Result Class MUST NOT encode protocol-specific response semantics (no HTTP status, no RPC error code). (Patch 4)
 - **`RESPONSE_PROJECTION_EXTERNAL`** — Mapping a canonical result to HTTP status, RPC error, CLI exit code, or equivalent MUST occur outside the PGC transport contract, in the adapter. (Patch 4)
 - **`TI_BOUNDARY_NOT_STAGE`** — `TI` and `TE` are boundary contracts. They MUST NOT be modeled or implemented as inline execution stages within `IN → OP → CC → CT/CS`. (§2)
-- **`RB_NOT_TRANSPORT_ABSTRACTION`** — The transport boundary MUST NOT require a business `RB` as its semantic abstraction. Adapters MAY use implementation mechanisms internally, but transport *semantics* are never expressed as an `RB`. (Patch 7)
+- **`RB_NOT_TRANSPORT_ABSTRACTION`** — The transport boundary MUST NOT require a business `RB` as its semantic abstraction. Adapters MAY use implementation mechanisms internally, but transport *semantics* are never expressed as an `RB`.
+- **`TRANSPORT_DOMAIN_SEPARATION`** — A PGC transport contract MUST NOT define domain state-transition semantics, domain resource semantics, or domain-specific result interpretation. Domain semantics MUST enter governed execution through declared PGC artifacts and MUST NOT be introduced by an adapter, `TI`, or `TE`.
+- **`OPERATION_IDENTITY_RESOLVABLE`** — An Operation Identity MUST be uniquely resolvable within the applicable governance universe.
+- **`INVOCATION_TARGET_ABSTRACT`** — A `TI` binds an Operation Identity to a *governed executable target*; the transport contract MUST NOT assume that target is a Workflow.
+- **`TI_INPUT_CONTRACT_BY_REFERENCE`** — A `TI` MUST reference an existing governed input contract and MUST NOT define operation input semantics inline.
 
 ---
 
 ## 5. Canonical request and response schemas
 
-Represented here as the **Canonical Transport Contract** (Patch 5). The "envelope" is merely its serialization; the contract is the governed object. In Phase 3 these become schema artifacts `TRANSPORT_REQUEST_V0` and `TRANSPORT_RESPONSE_V0`.
+Represented here as the **Canonical Transport Contract**. The "envelope" is merely its serialization; the contract is the governed object. The canonical transport contract is **representation-independent**: JSON is one serialization and is not normative unless separately specified. In Phase 3 these become schema artifacts `TRANSPORT_REQUEST_V0` and `TRANSPORT_RESPONSE_V0`.
 
 ### 5.1 `TRANSPORT_REQUEST_V0`
 
@@ -157,8 +167,8 @@ Represented here as the **Canonical Transport Contract** (Patch 5). The "envelop
 {
   "request_id":      "string",
   "operation":       "OperationIdentity",
-  "actor":           {},          // reserved for AC — not interpreted in V0
-  "context":         {},          // reserved for AC — not interpreted in V0
+  "actor":           {},          // transport-carried governance input; delegated to AC, not evaluated in V0
+  "context":         {},          // transport-carried governance input; delegated to AC, not evaluated in V0
   "input":           {},          // operation input, conforming to TI's input contract
   "correlation_id":  "string",    // reserved + PROPAGATED in V0 (tracing/evidence)
   "idempotency_key": "string",    // reserved + DECLARED, NOT ENFORCED in V0
@@ -174,14 +184,14 @@ Represented here as the **Canonical Transport Contract** (Patch 5). The "envelop
 {
   "request_id":   "string",
   "outcome":      "SUCCESS | FAILURE",   // binary
-  "result_class": "ResultClass",         // SUCCESS | VIOLATION | UNAUTHORIZED | EXECUTION_FAILURE | NOT_FOUND
+  "result_class": "ResultClass",         // SUCCESS | VIOLATION | UNAUTHORIZED | EXECUTION_FAILURE | OPERATION_NOT_FOUND
   "result":       {},                    // payload on success; null on failure
   "evidence":     [],                    // references (e.g. trace ids)
   "errors":       []                     // populated on failure
 }
 ```
 
-`actor`/`context` (request) and the reservation of `correlation_id`/`idempotency_key` are **forward-compatibility slots**: structural now, no V0 semantics, no version bump when `AC`/idempotency arrive.
+`actor`/`context` are **transport-carried governance inputs** whose interpretation is delegated to the authority/context subsystem — V0 carries them structurally but does not evaluate them. With the reservation of `correlation_id`/`idempotency_key`, they are **forward-compatibility slots**: no V0 semantics, no version bump when `AC`/idempotency arrive.
 
 ---
 
@@ -194,10 +204,12 @@ A `TI` declares:
 ```
 TI
  ├── operation identity          (the public name it admits)
- ├── input contract reference    (a declared, named contract — not inline schema logic)
+ ├── input contract reference    (a declared, named contract — never inline schema logic)
  ├── context requirements        (what actor/context the operation requires; inert in V0)
- └── operation binding           (operation identity → WF)
+ └── invocation binding          (operation identity → governed executable target)
 ```
+
+A `TI` MUST reference an existing governed input contract; it MUST NOT define operation input semantics inline. This preserves *operation admission ≠ data contract*, and prevents `TI` from becoming a disguised schema artifact.
 
 Division of labor:
 
@@ -205,7 +217,7 @@ Division of labor:
 TI declares  ──►  Compiler resolves & validates  ──►  Runtime enforces the compiled boundary
 ```
 
-- **Compiler MUST verify:** the operation exists, the input contract exists and is type-compatible, the target WF exists, and the closure is valid.
+- **Compiler MUST verify:** the operation exists, the input contract exists and is type-compatible, the **invocation target** exists (a governed executable target — a `WF` in the current RI), and the closure is valid.
 - **Runtime MUST:** resolve an incoming Canonical Request against the *already-compiled* TI and perform a deterministic invocation. It MUST NOT decide arbitrary semantics at request time.
 
 Consistent with the central PGC principle: **the compiler decides; the runtime executes.**
@@ -214,25 +226,25 @@ Consistent with the central PGC principle: **the compiler decides; the runtime e
 
 ## 7. TE semantics
 
-A `TE` **classifies**; the adapter **projects** (Patch 4).
+A `TE` **declares** classification policy; the compiler validates it; the runtime applies it; the adapter **projects**. A PGC Result exists independent of transport — `TE` projects it, it does not own it.
 
 ```
-PGC Result  ──►  TE (classify into Result Class)  ──►  Canonical Response  ──►  Adapter Response Projection
+PGC Result  ──►  TE (declared classification, compiled)  ──►  Canonical Response  ──►  Adapter Response Projection
 ```
 
 A `TE` declares:
 
 ```
 TE
- ├── result classification    (PGC Result → Result Class)
- ├── output contract          (which result payload is exposed)
- └── evidence exposure policy (which evidence references leave the boundary)
+ ├── result classification policy  (PGC outcome → Result Class)
+ ├── output contract               (which result payload is exposed)
+ └── evidence exposure policy       (which evidence references leave the boundary)
 ```
 
 Result Class is governed and protocol-neutral:
 
 ```
-SUCCESS | VIOLATION | UNAUTHORIZED | EXECUTION_FAILURE | NOT_FOUND
+SUCCESS | VIOLATION | UNAUTHORIZED | EXECUTION_FAILURE | OPERATION_NOT_FOUND
 ```
 
 Projection is adapter-owned and protocol-specific — the mapping table lives in the adapter, never in `TE`:
@@ -319,7 +331,7 @@ The invariant holds: **every external protocol is replaceable; the governed inte
 
 Out of scope for Transport Standard V0 — reserved structurally, not implemented:
 
-- **`AC` enforcement** — `actor`/`context` slots reserved; no authority evaluation.
+- **`AC` enforcement** — `actor`/`context` are carried as governance inputs but not evaluated; no authority evaluation in V0.
 - **Idempotency enforcement** — `idempotency_key` declared, not enforced.
 - **`XB_` artifact kind** — External Protocol Binding stays adapter-owned config.
 - **WebSocket and Message Queue adapters** — only HTTP, RPC, CLI are modeled.
