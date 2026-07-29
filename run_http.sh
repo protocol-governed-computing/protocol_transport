@@ -16,7 +16,7 @@
 #   PYTHON               default python3
 #
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # transport/ = source root for `adapters`,`resolver`
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # protocol_transport/ = source root for `adapters`,`resolver`
 PYTHON="${PYTHON:-python3}"
 
 : "${PGC_RUNTIME_ROOT:?set PGC_RUNTIME_ROOT (protocol_runtime repo root)}"
