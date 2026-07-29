@@ -71,11 +71,11 @@ change**.
 
 `run_http.sh` is generic and requires the environment to point it at roots. A concrete
 composition (the platform reference surface) lives at
-`platform/reference_surface/serve.sh`, which supplies every `PGC_*` variable and execs this
+`conformance_workloads/workloads/collatz/client/serve.sh`, which supplies every `PGC_*` variable and execs this
 launcher:
 
 ```bash
-./platform/reference_surface/serve.sh      # serves the reference surface on :8000
+./conformance_workloads/workloads/collatz/client/serve.sh      # serves the reference surface on :8000
 ```
 
 See [`CLAUDE.md`](CLAUDE.md) for the full configuration surface and architectural rules.
