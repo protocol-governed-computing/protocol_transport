@@ -22,7 +22,12 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from adapters.http.binding import load_bindings, to_canonical_request
+from adapters.http.binding import (
+    AdmissionError,
+    load_bindings,
+    select_operation,
+    to_canonical_request,
+)
 from resolver.registry import load_registry
 from resolver.resolver import resolve
 
@@ -31,7 +36,11 @@ _HTTP_STATUS = {
     "SUCCESS": 200,
     "VIOLATION": 400,
     "UNAUTHORIZED": 401,
+    # Both governed absence classes project to 404 in HTTP — the protocol cannot express the
+    # distinction, but the Result Class in the response body preserves it. Projection collapses
+    # meaning; the canonical response must not.
     "NOT_FOUND": 404,
+    "OPERATION_NOT_FOUND": 404,
     "EXECUTION_FAILURE": 500,
 }
 
@@ -120,9 +129,9 @@ class _Handler(BaseHTTPRequestHandler):
     # ── transport boundary ──
     def do_POST(self) -> None:  # noqa: N802
         path = self.path.split("?", 1)[0]
-        operation = _BINDINGS.get(("POST", path))
-        if operation is None:
-            self._json(404, {"outcome": "FAILURE", "result_class": "NOT_FOUND",
+        binding = _BINDINGS.get(("POST", path))
+        if binding is None:
+            self._json(404, {"outcome": "FAILURE", "result_class": "OPERATION_NOT_FOUND",
                              "result": None, "evidence": [],
                              "errors": [{"code": "NO_BINDING", "message": f"no operation bound to POST {path}"}]})
             return
@@ -137,7 +146,19 @@ class _Handler(BaseHTTPRequestHandler):
                              "errors": [{"code": "MALFORMED_BODY", "message": "invalid JSON"}]})
             return
 
-        canonical = to_canonical_request(operation, body if isinstance(body, dict) else {})
+        # Namespace admission for an operation-in-body route. Refusing an identity outside the
+        # admitted namespace is protocol mechanics; the adapter still never interprets the
+        # identity it admits (ADAPTER_NON_AUTHORIAL).
+        try:
+            operation, canonical_input = select_operation(
+                binding, body if isinstance(body, dict) else {})
+        except AdmissionError as exc:
+            self._json(400, {"outcome": "FAILURE", "result_class": "VIOLATION",
+                             "result": None, "evidence": [],
+                             "errors": [{"code": "OPERATION_NOT_ADMITTED", "message": str(exc)}]})
+            return
+
+        canonical = to_canonical_request(operation, canonical_input)
         response = resolve(canonical, _REGISTRY, data_root=_DATA_ROOT, snapshot_root=_SNAPSHOT_ROOT)
         self._json(_HTTP_STATUS.get(response["result_class"], 500), response)
 
@@ -158,7 +179,11 @@ def main() -> None:
     httpd = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
     print(f"[transport-http] serving on http://127.0.0.1:{port}")
     print(f"[transport-http] mounts:     {[(p, str(d)) for p, d in _MOUNTS]}")
-    print(f"[transport-http] bindings:   {{{', '.join(f'{m} {p} -> {op}' for (m, p), op in _BINDINGS.items())}}}")
+    routes = ', '.join(
+        f"{m} {p} -> {b.operation or b.namespace + '* (in body)'}"
+        for (m, p), b in _BINDINGS.items()
+    )
+    print(f"[transport-http] bindings:   {{{routes}}}")
     print(f"[transport-http] operations: {sorted(_REGISTRY)}")
     try:
         httpd.serve_forever()
