@@ -22,7 +22,12 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from adapters.http.binding import load_bindings, to_canonical_request
+from adapters.http.binding import (
+    AdmissionError,
+    load_bindings,
+    select_operation,
+    to_canonical_request,
+)
 from resolver.registry import load_registry
 from resolver.resolver import resolve
 
@@ -31,7 +36,11 @@ _HTTP_STATUS = {
     "SUCCESS": 200,
     "VIOLATION": 400,
     "UNAUTHORIZED": 401,
+    # Both governed absence classes project to 404 in HTTP — the protocol cannot express the
+    # distinction, but the Result Class in the response body preserves it. Projection collapses
+    # meaning; the canonical response must not.
     "NOT_FOUND": 404,
+    "OPERATION_NOT_FOUND": 404,
     "EXECUTION_FAILURE": 500,
 }
 
@@ -66,12 +75,35 @@ def _parse_mounts(spec: str) -> list[tuple[str, Path]]:
     return mounts
 
 
+def _snapshot_identity(root: str | None) -> str:
+    """The snapshot_id this adapter booted against, for the startup banner.
+
+    Printed so a STALE server is a one-line comparison rather than an inference: the boundary is
+    read once at import (see below), so a snapshot rebuilt after startup is invisible to a running
+    process. Reporting the id it actually booted with makes that visible without guesswork.
+    """
+    if not root:
+        return "(runtime default)"
+    manifest = Path(root) / "manifest.json"
+    if not manifest.is_file():
+        return "(no manifest)"
+    try:
+        return json.loads(manifest.read_text(encoding="utf-8")).get("snapshot_id", "(absent)")
+    except (OSError, ValueError):
+        return "(unreadable)"
+
+
 # ── configuration (env-provisioned; the adapter is POINTED at everything) ──
 _MOUNTS = _parse_mounts(os.environ["PGC_STATIC_MOUNTS"])
 _BINDINGS = load_bindings(Path(os.environ["PGC_HTTP_BINDINGS"]))
 _DATA_ROOT = os.environ["PGC_DATA_ROOT"]
 _SNAPSHOT_ROOT = os.environ.get("PGC_SNAPSHOT_ROOT")  # None -> runtime default
-# TI/TE boundary contracts are read from the sealed snapshot (compiled TI_/TE_ kinds).
+# TI/TE boundary contracts are read from the sealed snapshot (compiled TI_/TE_ kinds), ONCE, at
+# import. The snapshot is immutable by construction, so re-reading it mid-flight would be reading
+# for a change that cannot happen — and a boundary that silently reloaded itself would no longer
+# be the sealed boundary the composition attested. The operational consequence is real, though:
+# a snapshot rebuilt after startup is invisible until the process restarts, which is why the
+# banner reports the snapshot_id and the operations this process actually booted with.
 _REGISTRY = load_registry(Path(os.environ["PGC_SNAPSHOT_ROOT"]))
 
 
@@ -120,9 +152,9 @@ class _Handler(BaseHTTPRequestHandler):
     # ── transport boundary ──
     def do_POST(self) -> None:  # noqa: N802
         path = self.path.split("?", 1)[0]
-        operation = _BINDINGS.get(("POST", path))
-        if operation is None:
-            self._json(404, {"outcome": "FAILURE", "result_class": "NOT_FOUND",
+        binding = _BINDINGS.get(("POST", path))
+        if binding is None:
+            self._json(404, {"outcome": "FAILURE", "result_class": "OPERATION_NOT_FOUND",
                              "result": None, "evidence": [],
                              "errors": [{"code": "NO_BINDING", "message": f"no operation bound to POST {path}"}]})
             return
@@ -137,7 +169,19 @@ class _Handler(BaseHTTPRequestHandler):
                              "errors": [{"code": "MALFORMED_BODY", "message": "invalid JSON"}]})
             return
 
-        canonical = to_canonical_request(operation, body if isinstance(body, dict) else {})
+        # Namespace admission for an operation-in-body route. Refusing an identity outside the
+        # admitted namespace is protocol mechanics; the adapter still never interprets the
+        # identity it admits (ADAPTER_NON_AUTHORIAL).
+        try:
+            operation, canonical_input = select_operation(
+                binding, body if isinstance(body, dict) else {})
+        except AdmissionError as exc:
+            self._json(400, {"outcome": "FAILURE", "result_class": "VIOLATION",
+                             "result": None, "evidence": [],
+                             "errors": [{"code": "OPERATION_NOT_ADMITTED", "message": str(exc)}]})
+            return
+
+        canonical = to_canonical_request(operation, canonical_input)
         response = resolve(canonical, _REGISTRY, data_root=_DATA_ROOT, snapshot_root=_SNAPSHOT_ROOT)
         self._json(_HTTP_STATUS.get(response["result_class"], 500), response)
 
@@ -156,10 +200,21 @@ class _Handler(BaseHTTPRequestHandler):
 def main() -> None:
     port = int(os.environ.get("PGC_HTTP_PORT", "8000"))
     httpd = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
-    print(f"[transport-http] serving on http://127.0.0.1:{port}")
+    # Flushed explicitly: stdout is block-buffered when redirected to a file, and this banner is
+    # the record of WHAT this process booted with. A diagnostic that only appears on a tty is not
+    # available in the situation it exists for — a surface launched in the background.
+    print(f"[transport-http] serving on http://127.0.0.1:{port}", flush=True)
     print(f"[transport-http] mounts:     {[(p, str(d)) for p, d in _MOUNTS]}")
-    print(f"[transport-http] bindings:   {{{', '.join(f'{m} {p} -> {op}' for (m, p), op in _BINDINGS.items())}}}")
+    routes = ', '.join(
+        f"{m} {p} -> {b.operation or b.namespace + '* (in body)'}"
+        for (m, p), b in _BINDINGS.items()
+    )
+    print(f"[transport-http] bindings:   {{{routes}}}")
+    print(f"[transport-http] snapshot:   {_SNAPSHOT_ROOT} "
+          f"({_snapshot_identity(_SNAPSHOT_ROOT)})")
     print(f"[transport-http] operations: {sorted(_REGISTRY)}")
+    print("[transport-http] the boundary is read once, at startup — restart after any rebuild",
+          flush=True)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
