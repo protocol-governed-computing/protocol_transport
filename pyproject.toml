@@ -3,8 +3,8 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "transport"
-version = "1.0.0"
+name = "protocol_transport"
+dynamic = ["version"]
 description = "Protocol-Governed Computing — domain-neutral transport boundary engine (canonical contracts, generic resolver, protocol adapters)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -41,7 +41,7 @@ dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/bachipeachy/transport"
-Repository = "https://github.com/protocol-governed-computing/transport"
+Repository = "https://github.com/protocol-governed-computing/protocol_transport"
 
 [tool.setuptools]
 include-package-data = true
@@ -52,3 +52,6 @@ include = ["adapters*", "resolver*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.yaml", "*.json"]
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION"}

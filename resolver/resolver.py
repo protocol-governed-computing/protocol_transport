@@ -7,7 +7,7 @@ a Canonical Transport Response.
 This module contains ZERO operation-specific logic. Every operation-specific fact — the
 bound WF, the input mapping, the result classification, the output projection — is
 *declared* in the TI/TE artifacts and interpreted generically here. Adding an operation
-(e.g. `pi.query`) is additive: a new TI/TE pair, no change to this module. It also knows
+(e.g. `si.query`) is additive: a new TI/TE pair, no change to this module. It also knows
 no wire protocol: HTTP/RPC/CLI never appear here (`TRANSPORT_PROTOCOL_INDEPENDENCE`).
 """
 from __future__ import annotations
@@ -107,7 +107,7 @@ def resolve(request: dict[str, Any], registry: dict[str, OperationContract], *,
     handler = ti["handler"]
     kind = handler.get("kind")
     if kind != "WF_INVOCATION":
-        # Only WF_INVOCATION is implemented in cut #1; SNAPSHOT_QUERY (pi.query) is cut #2.
+        # Only WF_INVOCATION is implemented in cut #1; SNAPSHOT_QUERY (si.query) is cut #2.
         return _response(request_id, "EXECUTION_FAILURE",
                          errors=[{"code": "HANDLER_KIND_UNSUPPORTED", "message": f"handler kind '{kind}' not implemented"}])
 

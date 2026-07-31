@@ -344,11 +344,11 @@ Out of scope for Transport Standard V0 — reserved structurally, not implemente
 
 | Phase | Deliverable | Repo(s) |
 |---|---|---|
-| **1 (this doc)** | Semantic model — vocabulary, topology, invariants, canonical schemas, TI/TE semantics, Collatz conformance | `transport/doc/` |
-| 2 | Governing constitutions (envelope, TI, TE) | `pgc_charter` / governance |
+| **1 (this doc)** | Semantic model — vocabulary, topology, invariants, canonical schemas, TI/TE semantics, Collatz conformance | `protocol_transport/doc/` |
+| 2 | Governing constitutions (envelope, TI, TE) | `standards` / governance |
 | 3 | Compiler recognition of `TI_`/`TE_` kinds + `TRANSPORT_REQUEST/RESPONSE_V0` schemas; snapshot assembly | `protocol_compiler`, `snapshot_assembler` |
-| 4 | First `TI_`/`TE_COLLATZ_COMPUTE_V0` + thin HTTP adapter reusing the existing Collatz UI | `transport/`, `platform/reference_workloads`, `protocol_runtime` |
-| 5 | RPC + CLI adapters against the *same* TI/TE — proves protocol-neutrality | `transport/` |
+| 4 | First `TI_`/`TE_COLLATZ_COMPUTE_V0` + thin HTTP adapter reusing the existing Collatz UI | `protocol_transport/`, `conformance_workloads`, `protocol_runtime` |
+| 5 | RPC + CLI adapters against the *same* TI/TE — proves protocol-neutrality | `protocol_transport/` |
 
 ---
 
