@@ -1,8 +1,8 @@
 # Architecture — `protocol_transport`
 
-**Release 5.** This document is frozen for this release. It describes what this repository is, what
-it owns, and what it must never do. It is written to be read before any code, and assumes no prior
-familiarity with Protocol-Governed Computing.
+This document describes what this repository is, what it owns, and what it must never do. It is
+written to be read before any code, and assumes no prior familiarity with Protocol-Governed
+Computing.
 
 For the big picture — what PGC is and how the repositories compose — see
 **https://github.com/protocol-governed-computing**.

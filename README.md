@@ -1,4 +1,4 @@
-# transport
+# protocol_transport
 
 **The PGC transport boundary engine** — a domain-neutral, protocol-neutral governed
 boundary between external interaction protocols (HTTP, RPC, CLI) and a PGC execution
