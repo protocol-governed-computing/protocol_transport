@@ -8,7 +8,7 @@ It knows *how* to transport. It declares nothing about *what* is transported: ev
 operation, and workflow binding arrives as configuration the engine is **pointed at**, never
 hardcoded. The domain/platform declares what may be transported.
 
-> **Semantic authority:** [`doc/TRANSPORT_STANDARD_V0.md`](doc/TRANSPORT_STANDARD_V0.md)
+> **Semantic authority:** [`TRANSPORT_STANDARD_V0.md`](TRANSPORT_STANDARD_V0.md)
 > (Phase-1 frozen). Read it first. For working in this repo, see
 > [`CLAUDE.md`](CLAUDE.md).
 
