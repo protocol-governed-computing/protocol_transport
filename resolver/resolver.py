@@ -14,7 +14,7 @@ protocol: HTTP/RPC/CLI never appear here (`TRANSPORT_PROTOCOL_INDEPENDENCE`).
 `(status, surface)`; the TE then classifies that status and projects that surface. Execution
 and inspection differ only in which static entry point the KIND selects:
 
-    WF_INVOCATION    runtime.api.run_workflow    execute a governed workflow
+    WF_INVOCATION    runtime.api.invoke_workflow execute a governed workflow where it is placed
     SNAPSHOT_READ    inspector.api.query         project PUBLISHED snapshot material
     SNAPSHOT_QUERY   inspector.api.query         DERIVE a result over snapshot state
 
@@ -32,7 +32,7 @@ import re
 from typing import Any, Callable, NamedTuple
 
 from inspector.api import query as inspect_query
-from runtime.api import run_workflow
+from runtime.api import invoke_workflow
 
 from resolver.registry import OperationContract
 
@@ -147,8 +147,10 @@ class Outcome(NamedTuple):
 
 def _invoke_workflow(handler: dict[str, Any], payload: dict[str, Any], *,
                      data_root: str, snapshot_root: str | None) -> Outcome:
-    run = run_workflow(wf_fqdn=handler["workflow"], payload=payload,
-                       data_root=data_root, snapshot_root=snapshot_root)
+    # Where the workflow executes is the runtime's placement question, answered from the sealed
+    # snapshot. The boundary asks for it executed and is told the same thing either way.
+    run = invoke_workflow(wf_fqdn=handler["workflow"], payload=payload,
+                          data_root=data_root, snapshot_root=snapshot_root)
     ref: str | None = None
     # Resolvable, protocol-neutral reference: the trace path relative to the instance data
     # root, derived from the runtime's OWN trace_dir (no trace layout hard-coded here). An

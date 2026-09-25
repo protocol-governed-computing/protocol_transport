@@ -15,6 +15,8 @@
 # Optional env:
 #   PGC_IMPL_ROOTS       colon-separated roots for domain CT/CS impl imports (handler_ref)
 #   PGC_HTTP_PORT        default 8000
+#   PGC_HTTP_BIND        listen address, default 127.0.0.1
+#   PGC_COORDINATOR_URL  required when the snapshot places execution on FEDERATED_NODE
 #   PYTHON               default python3
 #
 set -euo pipefail

@@ -199,11 +199,14 @@ class _Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     port = int(os.environ.get("PGC_HTTP_PORT", "8000"))
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
+    # Loopback unless told otherwise. A node serving the interaction boundary of a node group sets
+    # PGC_HTTP_BIND to its external address; reachability is then the network's to restrict.
+    bind = os.environ.get("PGC_HTTP_BIND", "127.0.0.1")
+    httpd = ThreadingHTTPServer((bind, port), _Handler)
     # Flushed explicitly: stdout is block-buffered when redirected to a file, and this banner is
     # the record of WHAT this process booted with. A diagnostic that only appears on a tty is not
     # available in the situation it exists for — a surface launched in the background.
-    print(f"[transport-http] serving on http://127.0.0.1:{port}", flush=True)
+    print(f"[transport-http] serving on http://{bind}:{port}", flush=True)
     print(f"[transport-http] mounts:     {[(p, str(d)) for p, d in _MOUNTS]}")
     routes = ', '.join(
         f"{m} {p} -> {b.operation or b.namespace + '* (in body)'}"

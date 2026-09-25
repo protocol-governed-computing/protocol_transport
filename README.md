@@ -89,4 +89,4 @@ external world  →  transport (adapter → resolver)  →  runtime (executes)  
 ```
 
 The engine's only cross-repo dependency is the runtime **execution interface**
-(`runtime.api.run_workflow`) — it never imports the compiler, protocol, or any domain.
+(`runtime.api.invoke_workflow`) — it never imports the compiler, protocol, or any domain.
