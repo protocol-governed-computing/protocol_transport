@@ -170,11 +170,14 @@ def _inspect(handler: dict[str, Any], payload: dict[str, Any], *,
 
     The handler declares WHICH inspection identity to ask (`handler.operation`), the TI declares
     how canonical input becomes its params, and the inspector alone decides how to answer it.
-    Inspection never executes, so it yields no evidence reference.
+    Inspection never executes, so it yields no evidence reference. The data root is passed as the
+    trace root: an operation that explains a run reads the trace by the same reference
+    `_invoke_workflow` returned, relative to the same root. Every other operation ignores it.
     """
     if snapshot_root is None:
         raise ValueError("snapshot inspection requires a snapshot root")
-    status, surface = inspect_query(handler["operation"], payload, snapshot_root)
+    status, surface = inspect_query(handler["operation"], payload, snapshot_root,
+                                    trace_root=data_root)
     return Outcome(status, surface, None)
 
 
