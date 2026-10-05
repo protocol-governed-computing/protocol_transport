@@ -101,8 +101,18 @@ def _resolve_path(path: str, ctx: dict[str, Any]) -> Any:
     for seg in path.split("."):
         if seg.startswith("$"):
             seg = str(ctx["input"][seg[1:]])
+        if not isinstance(node, dict) or seg not in node:
+            raise _AbsentOutput(f"output path {path!r} reaches nothing at {seg!r}")
         node = node[seg]
     return node
+
+
+class _AbsentOutput(LookupError):
+    """An egress output field whose source the handler's surface does not carry.
+
+    The output contract has no way to declare a field optional, so every field it names is owed. A
+    field the surface does not carry is refused by name, never supplied as null (`3c` RT-6).
+    """
 
 
 def _validate_input(canonical_input: dict[str, Any], input_contract: dict[str, Any]) -> list[dict]:
@@ -254,7 +264,12 @@ def resolve(request: dict[str, Any], registry: dict[str, OperationContract], *,
     ctx = {"input": canonical_input, "surface": outcome.surface}
     result: dict[str, Any] = {}
     for spec in te.get("output_contract", []):
-        value = _resolve_path(spec["from"], ctx)
+        try:
+            value = _resolve_path(spec["from"], ctx)
+        except _AbsentOutput as exc:
+            return _response(request_id, "EXECUTION_FAILURE",
+                             errors=[{"code": "EXECUTION_FAILURE",
+                                      "message": f"egress field {spec['field']!r}: {exc}"}])
         result[spec["field"]] = _DERIVE[spec.get("op", "identity")](value)
 
     evidence: list[str] = []
