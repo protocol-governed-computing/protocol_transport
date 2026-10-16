@@ -3,20 +3,18 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "protocol_transport"
-dynamic = ["version"]
+name = "pgc-transport"
+version = "5.0.0"
 description = "Protocol-Governed Computing — domain-neutral transport boundary engine (canonical contracts, generic resolver, protocol adapters)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 
-authors = [
-  { name = "Bhash Ganti aka Bachi" }
-]
+authors = [{ name = "Bhash Ganti", email = "bachipeachy@gmail.com" }]
 
 keywords = [
-  "protocol-governed-systems",
-  "pgs",
+  "protocol-governed-computing",
+  "pgc",
   "transport",
   "ingress",
   "egress",
@@ -40,8 +38,11 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/bachipeachy/transport"
+Homepage = "https://omnibachi.org/"
 Repository = "https://github.com/protocol-governed-computing/protocol_transport"
+
+[project.scripts]
+pgc_transport = "adapters.cli.main:main"
 
 [tool.setuptools]
 include-package-data = true
@@ -52,6 +53,3 @@ include = ["adapters*", "resolver*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.yaml", "*.json"]
-
-[tool.setuptools.dynamic]
-version = {file = "VERSION"}

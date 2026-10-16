@@ -47,6 +47,7 @@ HTTP / RPC / CLI
 | `contracts/` | Canonical, protocol-neutral interop objects — `TRANSPORT_REQUEST_V0`, `TRANSPORT_RESPONSE_V0` |
 | `resolver/` | The generic resolution engine: `operation → TI → handler → TE → Canonical Response`. Zero domain knowledge. |
 | `adapters/http/` | HTTP mechanics: static mounts, the External Protocol Binding table (data), Response Projection |
+| `adapters/cli/` | The `pgc_transport` command: one request from the command line, and the HTTP adapter's launcher |
 | `doc/` | `TRANSPORT_STANDARD_V0.md` — the frozen semantic model |
 | `run_http.sh` | Domain-neutral launcher (env-provisioned; names no workload) |
 
@@ -77,6 +78,19 @@ launcher:
 ```bash
 ./conformance_workloads/workloads/collatz/client/serve.sh      # serves the reference surface on :8000
 ```
+
+Installed as `pgc-transport`, the same boundary is the `pgc_transport` command. It is pointed at a
+snapshot and an instance root, like the HTTP adapter:
+
+```bash
+export PGC_SNAPSHOT_ROOT=snapshot PGC_DATA_ROOT=data
+pgc_transport call collatz.compute '{"number": 27}'    # prints the Canonical Transport Response
+pgc_transport http                                     # serves the HTTP adapter, as run_http.sh does
+```
+
+`call` exits with the adapter's projection of the Result Class: `0` SUCCESS, `1` VIOLATION, `3`
+UNAUTHORIZED, `4` NOT_FOUND, `5` OPERATION_NOT_FOUND, `6` EXECUTION_FAILURE. `2` means the
+invocation itself was malformed and never reached the boundary.
 
 See [`CLAUDE.md`](CLAUDE.md) for the full configuration surface and architectural rules.
 
