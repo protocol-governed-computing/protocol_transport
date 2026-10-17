@@ -45,9 +45,9 @@ HTTP / RPC / CLI
 | Path | Role |
 |------|------|
 | `contracts/` | Canonical, protocol-neutral interop objects — `TRANSPORT_REQUEST_V0`, `TRANSPORT_RESPONSE_V0` |
-| `resolver/` | The generic resolution engine: `operation → TI → handler → TE → Canonical Response`. Zero domain knowledge. |
-| `adapters/http/` | HTTP mechanics: static mounts, the External Protocol Binding table (data), Response Projection |
-| `adapters/cli/` | The `pgc_transport` command: one request from the command line, and the HTTP adapter's launcher |
+| `pgc_transport/resolver/` | The generic resolution engine: `operation → TI → handler → TE → Canonical Response`. Zero domain knowledge. |
+| `pgc_transport/adapters/http/` | HTTP mechanics: static mounts, the External Protocol Binding table (data), Response Projection |
+| `pgc_transport/adapters/cli/` | The `pgc_transport` command: one request from the command line, and the HTTP adapter's launcher |
 | `doc/` | `TRANSPORT_STANDARD_V0.md` — the frozen semantic model |
 | `run_http.sh` | Domain-neutral launcher (env-provisioned; names no workload) |
 
@@ -55,7 +55,7 @@ HTTP / RPC / CLI
 
 ## The acid test
 
-The engine holds **no domain knowledge**. Grep `resolver/` and `adapters/` for any workload
+The engine holds **no domain knowledge**. Grep `pgc_transport/` for any workload
 or field name (`collatz`, `number`, `steps`, a route literal) and you find nothing. Everything
 domain-specific is data the engine is pointed at:
 

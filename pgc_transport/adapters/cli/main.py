@@ -9,7 +9,7 @@ Layer 2 (Transport Standard V0), the command-line counterpart of the HTTP adapte
         the Result-Class → exit-status table lives HERE, never in a TE.
 
     pgc_transport http
-        Serve the HTTP adapter (`adapters.http.server`), configured exactly as `run_http.sh`
+        Serve the HTTP adapter (`pgc_transport.adapters.http.server`), configured exactly as `run_http.sh`
         configures it.
 
 Both are POINTED at everything through the environment (ADAPTER_NON_AUTHORIAL):
@@ -29,9 +29,9 @@ import os
 import sys
 from pathlib import Path
 
-from adapters.http.binding import to_canonical_request
-from resolver.registry import load_registry
-from resolver.resolver import resolve
+from pgc_transport.adapters.http.binding import to_canonical_request
+from pgc_transport.resolver.registry import load_registry
+from pgc_transport.resolver.resolver import resolve
 
 # Response Projection (adapter-owned; §7). Result Class -> exit status. Distinct statuses keep
 # the classes apart for a caller that cannot read the body; the body carries the class itself.
@@ -90,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "call":
         return _call(args.operation, args.input)
     # Imported only when asked for: the HTTP adapter reads its configuration at import.
-    from adapters.http import server
+    from pgc_transport.adapters.http import server
     server.main()
     return 0
 

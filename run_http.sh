@@ -20,7 +20,7 @@
 #   PYTHON               default python3
 #
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # protocol_transport/ = source root for `adapters`,`resolver`
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # protocol_transport/ = source root for `pgc_transport`
 PYTHON="${PYTHON:-python3}"
 
 # The three interface roots default to wherever the interpreter already keeps its
@@ -61,7 +61,7 @@ done
 : "${PGC_DATA_ROOT:?set PGC_DATA_ROOT (instance root for CS state + traces)}"
 
 # Source roots on PYTHONPATH (env-provisioned; no sys.path manipulation):
-#   this repo  -> `adapters`, `resolver`
+#   this repo  -> `pgc_transport` (its `adapters` and `resolver`)
 #   runtime    -> `runtime`   (the EXECUTION interface, handler kind WF_INVOCATION)
 #   inspector  -> `inspector` (the INSPECTION interface, kinds SNAPSHOT_READ/SNAPSHOT_QUERY)
 #   assembler  -> `assembler` (acceptance: `runtime.boot` reaches the SAME determination the
@@ -74,4 +74,4 @@ done
 export PYTHONPATH="$SCRIPT_DIR:$PGC_RUNTIME_ROOT:$PGC_INSPECTOR_ROOT:$PGC_ASSEMBLER_ROOT${PGC_IMPL_ROOTS:+:$PGC_IMPL_ROOTS}${PYTHONPATH:+:$PYTHONPATH}"
 mkdir -p "$PGC_DATA_ROOT"
 
-exec "$PYTHON" -m adapters.http.server
+exec "$PYTHON" -m pgc_transport.adapters.http.server

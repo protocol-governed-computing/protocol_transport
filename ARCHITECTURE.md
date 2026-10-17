@@ -107,7 +107,7 @@ Both are declared by the domain, compiled, and sealed. Neither lives in this rep
 This is a claim the reader can execute, and it is the point of the repository:
 
 ```bash
-grep -rniE 'collatz|number|steps|/api/' resolver/ adapters/
+grep -rniE 'collatz|number|steps|/api/' pgc_transport/
 ```
 
 **It returns nothing.** If it ever returns something, this layer has stopped being a boundary and
@@ -179,13 +179,16 @@ an additive change rather than a rewrite.
 
 ```
 contracts/            the canonical request and response objects — no protocol in them
-resolver/
+pgc_transport/        the one import package; everything below is under it
+  resolver/
     registry.py       operation identity → its compiled TI/TE pair
     resolver.py       the generic path: TI → handler → TE
-adapters/
+  adapters/
     http/
         binding.py    the External Protocol Binding: routes as data
         server.py     HTTP mechanics, static mounts, response projection
+    cli/
+        main.py       the `pgc_transport` command: one request, or the HTTP adapter
 doc/                  the transport standard this engine implements
 run_http.sh           a launcher that names no workload
 ```

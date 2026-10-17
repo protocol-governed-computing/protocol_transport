@@ -22,14 +22,14 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from adapters.http.binding import (
+from pgc_transport.adapters.http.binding import (
     AdmissionError,
     load_bindings,
     select_operation,
     to_canonical_request,
 )
-from resolver.registry import load_registry
-from resolver.resolver import resolve
+from pgc_transport.resolver.registry import load_registry
+from pgc_transport.resolver.resolver import resolve
 
 # Response Projection (adapter-owned; §7). Result Class -> HTTP status.
 _HTTP_STATUS = {

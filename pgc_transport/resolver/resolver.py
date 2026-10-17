@@ -34,7 +34,7 @@ from typing import Any, Callable, NamedTuple
 from inspector.api import query as inspect_query
 from runtime.api import invoke_workflow
 
-from resolver.registry import OperationContract
+from pgc_transport.resolver.registry import OperationContract
 
 _SUCCESS = "SUCCESS"
 _INPUT_TOKEN = re.compile(r"^\$\{input\.(\w+)\}$")

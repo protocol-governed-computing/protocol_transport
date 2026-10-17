@@ -42,14 +42,14 @@ Homepage = "https://omnibachi.org/"
 Repository = "https://github.com/protocol-governed-computing/protocol_transport"
 
 [project.scripts]
-pgc_transport = "adapters.cli.main:main"
+pgc_transport = "pgc_transport.adapters.cli.main:main"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["adapters*", "resolver*"]
+include = ["pgc_transport*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.yaml", "*.json"]
