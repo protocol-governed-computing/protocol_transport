@@ -29,12 +29,12 @@ PYTHON="${PYTHON:-python3}"
 # packages live. Setting any of them still overrides, which is what a development
 # checkout does — it points at repo roots instead.
 #
-# The check below is what makes this fail-hard rather than permissive. Previously
-# an unset or wrong root produced no error here at all: the launcher accepted it,
-# and the failure surfaced inside the server as `ModuleNotFoundError: No module
-# named 'runtime'`, three frames deep in the resolver, naming a package rather
-# than the misconfigured root that caused it. Silent until far too late is the
-# failure mode this repo's fail-hard rule exists to prevent.
+# The check below is what makes this fail-hard rather than permissive. Without
+# it, an unset or wrong root produces no error here: the failure surfaces inside
+# the server as `ModuleNotFoundError: No module named 'runtime'`, three frames
+# deep in the resolver, naming a package rather than the misconfigured root that
+# caused it. Silent until far too late is the failure mode this repo's fail-hard
+# rule exists to prevent.
 _SITE="$("$PYTHON" -c 'import site,sys; p=site.getsitepackages() if hasattr(site,"getsitepackages") else []; sys.stdout.write(p[0] if p else "")' 2>/dev/null || true)"
 : "${PGC_RUNTIME_ROOT:=$_SITE}"
 : "${PGC_INSPECTOR_ROOT:=$_SITE}"
