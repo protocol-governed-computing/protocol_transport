@@ -2,7 +2,6 @@
 
 **Kind:** transport canonical contract (request)
 **Governs:** the single, protocol-neutral ingress interop object (Transport Standard V0 §5.1).
-**Status:** cut-#1 hand-authored. Promoted to a compiled schema artifact in Phase 3.
 
 The Canonical Transport Request is the *only* object Layer 3 sees. Every external
 protocol (HTTP, RPC, CLI) is translated into this shape by its adapter; the governed

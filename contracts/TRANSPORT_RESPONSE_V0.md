@@ -2,7 +2,6 @@
 
 **Kind:** transport canonical contract (response)
 **Governs:** the single, protocol-neutral egress interop object (Transport Standard V0 §5.2).
-**Status:** cut-#1 hand-authored. Promoted to a compiled schema artifact in Phase 3.
 
 The Canonical Transport Response carries a governed, protocol-neutral `result_class`
 (`RESULT_CLASS_PROTOCOL_INDEPENDENCE`). Mapping it to an HTTP status / RPC error / CLI
