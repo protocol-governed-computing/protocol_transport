@@ -110,8 +110,9 @@ def _resolve_path(path: str, ctx: dict[str, Any]) -> Any:
 class _AbsentOutput(LookupError):
     """An egress output field whose source the handler's surface does not carry.
 
-    The output contract has no way to declare a field optional, so every field it names is owed. A
-    field the surface does not carry is refused by name, never supplied as null (`3c` RT-6).
+    Every field the output contract names is owed unless it declares `required: false`. An owed field
+    the surface does not carry is refused by name; an optional one is omitted. Neither is supplied as
+    null.
     """
 
 
@@ -267,6 +268,8 @@ def resolve(request: dict[str, Any], registry: dict[str, OperationContract], *,
         try:
             value = _resolve_path(spec["from"], ctx)
         except _AbsentOutput as exc:
+            if spec.get("required", True) is False:
+                continue
             return _response(request_id, "EXECUTION_FAILURE",
                              errors=[{"code": "EXECUTION_FAILURE",
                                       "message": f"egress field {spec['field']!r}: {exc}"}])
