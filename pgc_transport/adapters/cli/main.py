@@ -29,7 +29,7 @@ import os
 import sys
 from pathlib import Path
 
-from pgc_transport.adapters.http.binding import to_canonical_request
+from pgc_transport.request import to_canonical_request
 from pgc_transport.resolver.registry import load_registry
 from pgc_transport.resolver.resolver import resolve
 

@@ -26,8 +26,8 @@ from pgc_transport.adapters.http.binding import (
     AdmissionError,
     load_bindings,
     select_operation,
-    to_canonical_request,
 )
+from pgc_transport.request import to_canonical_request
 from pgc_transport.resolver.registry import load_registry
 from pgc_transport.resolver.resolver import resolve
 

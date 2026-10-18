@@ -180,6 +180,7 @@ an additive change rather than a rewrite.
 ```
 contracts/            the canonical request and response objects — no protocol in them
 pgc_transport/        the one import package; everything below is under it
+  request.py          the Canonical Transport Request every adapter builds
   resolver/
     registry.py       operation identity → its compiled TI/TE pair
     resolver.py       the generic path: TI → handler → TE
@@ -189,7 +190,7 @@ pgc_transport/        the one import package; everything below is under it
         server.py     HTTP mechanics, static mounts, response projection
     cli/
         main.py       the `pgc_transport` command: one request, or the HTTP adapter
-doc/                  the transport standard this engine implements
+TRANSPORT_STANDARD_V0.md  the transport standard this engine implements
 run_http.sh           a launcher that names no workload
 ```
 

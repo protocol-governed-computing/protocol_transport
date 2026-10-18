@@ -24,7 +24,6 @@ entirely in the JSON data file.
 from __future__ import annotations
 
 import json
-import uuid
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -80,19 +79,3 @@ def select_operation(binding: Binding, body: dict[str, Any]) -> tuple[str, dict[
     params = body.get("params")
     return operation, params if isinstance(params, dict) else {}
 
-
-def to_canonical_request(operation: str, canonical_input: dict[str, Any]) -> dict[str, Any]:
-    """Translate (bound operation, canonical input) → Canonical Transport Request.
-
-    Reserved AC/idempotency slots are structural only (no V0 semantics)."""
-    request_id = str(uuid.uuid4())
-    return {
-        "request_id": request_id,
-        "operation": operation,
-        "actor": {},                      # reserved (AC) — not interpreted in V0
-        "context": {},                    # reserved (AC) — not interpreted in V0
-        "input": canonical_input,
-        "correlation_id": request_id,     # reserved + propagated in V0
-        "idempotency_key": None,          # reserved, not enforced in V0
-        "metadata": {},
-    }
