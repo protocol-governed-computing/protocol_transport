@@ -1,0 +1,1 @@
+"""Protocol-neutral transport resolver — operation → TI → handler → TE → response."""
